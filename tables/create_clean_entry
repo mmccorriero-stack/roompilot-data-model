@@ -7,23 +7,24 @@
 --              il motore RoomPilot e dashboard BI.
 -- =============================================
 
-CREATE TABLE clean_entry (
+CREATE TABLE stg_reservations (
+
     hotel_id INT,
-    reserv_code VARCHAR(50),
+    reservation_code VARCHAR(50),
     booking_date DATE,
-    check_in DATE,
-    check_out DATE,
-    status VARCHAR(30),
+    check_in_date DATE,
+    check_out_date DATE,
+    reservation_status VARCHAR(30),
     agency_name VARCHAR(100),
     market_source VARCHAR(50),
     market_segment VARCHAR(50),
-    pax INT,
-    rate_plan VARCHAR(50),
-    daily_rate DECIMAL(10,2),
-    total_price DECIMAL(10,2),
+    guest_count INT,
+    rate_plan_code VARCHAR(50),
+    daily_rate_amount DECIMAL(10,2),
+    total_amount DECIMAL(10,2),
     guest_name VARCHAR(100),
-    e_mail VARCHAR(100),
-    country VARCHAR(50)
+    guest_email VARCHAR(100),
+    guest_country VARCHAR(50)
 );
 -- =============================================
 -- Note:
