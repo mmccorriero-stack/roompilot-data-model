@@ -1,13 +1,13 @@
-DROP TABLE IF EXISTS pricing_engine_v2;
+DROP TABLE IF EXISTS rp_pricing_engine_v2;
 
-CREATE TABLE pricing_engine_v2 AS
+CREATE TABLE rp_pricing_engine_v2 AS
 WITH pickup_summary AS (
     SELECT
         stay_date,
         hotel_id,
         ROUND(SUM(pickup_rooms), 2) AS pickup_rooms_last_snapshot,
         ROUND(SUM(pickup_revenue), 2) AS pickup_revenue_last_snapshot
-    FROM kpi_pickup_daily
+    FROM rp_kpi_pickup_daily
     GROUP BY
         stay_date,
         hotel_id
@@ -24,19 +24,16 @@ base AS (
         k.room_nights_sold,
         k.room_revenue,
 
-        m.market_avg_price,
-        m.market_min_price,
-        m.market_max_price,
+        NULL AS market_avg_price,
+        NULL AS market_min_price,
+        NULL AS market_max_price,
 
         COALESCE(p.pickup_rooms_last_snapshot, 0) AS pickup_rooms,
         COALESCE(p.pickup_revenue_last_snapshot, 0) AS pickup_revenue,
 
         CAST(julianday(k.stay_date) - julianday('now') AS INTEGER) AS days_to_arrival
 
-    FROM kpi_daily_performance k
-    LEFT JOIN kpi_market_daily m
-        ON k.stay_date = m.stay_date
-       AND k.hotel_id = m.hotel_id
+    FROM rp_kpi_daily_performance k
     LEFT JOIN pickup_summary p
         ON k.stay_date = p.stay_date
        AND k.hotel_id = p.hotel_id
@@ -52,12 +49,7 @@ scored AS (
             ELSE 0
         END AS occ_score,
 
-        CASE
-            WHEN market_avg_price IS NULL THEN 0
-            WHEN current_adr < market_avg_price * 0.95 THEN 1
-            WHEN current_adr > market_avg_price * 1.05 THEN -1
-            ELSE 0
-        END AS market_score,
+        0 AS market_score,
 
         CASE
             WHEN pickup_rooms >= 3 THEN 2
@@ -124,15 +116,15 @@ SELECT
 
     CASE
         WHEN (occ_score + market_score + pickup_score + lead_time_score) >= 4
-            THEN 'Domanda molto forte, pickup positivo e finestra corta: aumenta con decisione'
+            THEN 'Domanda forte e pickup positivo: aumento deciso consigliato'
         WHEN (occ_score + market_score + pickup_score + lead_time_score) >= 2
-            THEN 'Segnali positivi su domanda e mercato: aumento moderato consigliato'
+            THEN 'Segnali positivi: aumento moderato consigliato'
         WHEN (occ_score + market_score + pickup_score + lead_time_score) = 1
-            THEN 'Scenario leggermente favorevole: piccolo aumento possibile'
+            THEN 'Scenario leggermente favorevole: lieve aumento possibile'
         WHEN (occ_score + market_score + pickup_score + lead_time_score) = 0
             THEN 'Scenario equilibrato: mantieni la tariffa attuale'
         WHEN (occ_score + market_score + pickup_score + lead_time_score) <= -3
-            THEN 'Domanda debole o data vicina con bassa occupazione: riduzione consigliata'
+            THEN 'Domanda debole o finestra corta con bassa occupazione: riduzione consigliata'
         ELSE 'Scenario prudente: valuta lieve correzione al ribasso'
     END AS explanation
 
