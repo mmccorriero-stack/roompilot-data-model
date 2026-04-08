@@ -1,9 +1,11 @@
-DROP TABLE IF EXISTS kpi_market_daily;
+DROP TABLE IF EXISTS rp_kpi_market_daily;
 
-CREATE TABLE kpi_market_daily AS
+CREATE TABLE rp_kpi_market_daily AS
 SELECT
     stay_date,
+    stay_date_key,
     hotel_id,
+    source_system,
 
     ROUND(AVG(price_amount), 2) AS market_avg_price,
     MIN(price_amount) AS market_min_price,
@@ -11,7 +13,9 @@ SELECT
 
     COUNT(DISTINCT competitor_name) AS competitors_count
 
-FROM fact_competitor_rates
+FROM rp_fact_competitor_rates
 GROUP BY
     stay_date,
-    hotel_id;
+    stay_date_key,
+    hotel_id,
+    source_system;
